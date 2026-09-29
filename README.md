@@ -1,0 +1,1 @@
+My current plan is to focus on 1D strips at the moment as I do not currently use WLED for any matrix displays. There are still some missing FX. Other FX are not currently rendering correctly. After cleaning a few more things up, I want to work to add an editor to change settings in the presets.
