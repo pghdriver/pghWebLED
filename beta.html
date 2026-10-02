@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b1020">
+<title>pghWebLED · Beta coming soon</title>
+<style>
+/* Shared page palette. */
+:root{--theme-background:#0b1020;--theme-surface:#141e32;--theme-text:#e9edf7;--theme-text-muted:#aebbd0;--theme-text-on-accent:#fff;--theme-border:#384164;--theme-primary:#10d7ff;--theme-secondary:#3796ff;--theme-tertiary:#9b58ff;--theme-quaternary:#ec45cd;color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--theme-text);background:var(--theme-background)}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:28px 16px}main{width:min(100%,700px);padding:clamp(24px,5vw,48px);text-align:center;background:var(--theme-surface);border:1px solid var(--theme-border);border-radius:20px;box-shadow:0 18px 55px #0004}.brand-button{position:relative;display:inline-flex;align-items:center;justify-content:center;width:100%;padding:0;border:0;background:transparent;border-radius:8px;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}.brand-logo{display:block;width:100%;height:auto;aspect-ratio:7.55/1}.logo-toast{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.85);pointer-events:none;opacity:0;transition:opacity .22s ease,transform .22s ease;font-weight:800;font-size:1.15rem;letter-spacing:.08em;color:var(--theme-text-on-accent);background:#0c1224e0;border:1px solid var(--theme-primary);border-radius:999px;padding:6px 18px;box-shadow:0 8px 25px #0009;z-index:10}.logo-toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}.brand-button:focus-visible,a:focus-visible{outline:3px solid var(--theme-primary);outline-offset:5px}.channel{display:inline-block;margin:26px 0 0;padding:5px 12px;border:1px solid var(--theme-tertiary);border-radius:999px;color:var(--theme-text);font-size:.8rem;font-weight:700;letter-spacing:.06em}h1{margin:17px 0 12px;font-size:clamp(1.8rem,6vw,2.6rem);line-height:1.15}p{margin:0 auto;color:var(--theme-text-muted);font-size:1rem;line-height:1.65;max-width:48ch}.stable-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin-top:26px;padding:12px 22px;border:1px solid var(--theme-secondary);border-radius:10px;background:linear-gradient(120deg,#147da7,#6e4dc2);color:var(--theme-text-on-accent);font-weight:700;text-decoration:none}.stable-link:hover{text-decoration:underline}.hint{margin-top:20px;font-size:.78rem}
+@media(prefers-reduced-motion:reduce){.logo-toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<button id="logoSpeed" class="brand-button" type="button" aria-label="Logo animation: Flow, speed 1. Tap for speed; hold for animation." title="Tap: speed · Hold: animation">
+<canvas id="brandLogo" class="brand-logo" width="860" height="114" role="img" aria-label="pghWebLED">pghWebLED</canvas>
+<span id="logoToast" class="logo-toast" aria-live="polite"></span>
+</button>
+<div class="channel">0.3.x · BETA</div>
+<h1>Beta coming soon</h1>
+<p>The next development cycle will bring new features, including a preset editor. Beta builds will appear here when they’re ready.</p>
+<a class="stable-link" href="./index.html">Open the stable version</a>
+<p class="hint">Tap the logo to change its speed. Hold it to change the animation.</p>
+</main>
+<script>
+'use strict';
+const themeStyle=getComputedStyle(document.documentElement),themeColor=name=>themeStyle.getPropertyValue(`--theme-${name}`).trim();
+const pageTheme={logoStops:[[0,'primary'],[.36,'secondary'],[.66,'tertiary'],[1,'quaternary']].map(([position,name])=>{const hex=themeColor(name).slice(1);return [position,[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16))]}),logoShell:'rgba(34,52,71,.98)',logoOutline:'rgba(7,19,32,.82)',logoHazeCenter:.6,logoHazeMid:.22,logoShadowAlpha:.75,logoDiffuserAlpha:.42,logoScreenAlpha:.15,logoHighlight:22,logoShade:.78};
+(()=>{
+ const canvas=document.getElementById('brandLogo');if(!canvas)return;
+ const ctx=canvas.getContext('2d'),diffuser=document.createElement('canvas'),dctx=diffuser.getContext('2d');
+ const word='pghWebLED',glyphs={
+  p:['00000','11110','10001','11110','10000','10000','10000'],g:['00000','01110','10000','10111','10001','01111','00001'],h:['10000','10000','10110','11001','10001','10001','10001'],
+  W:['10001','10001','10001','10101','10101','11011','10001'],e:['00000','01110','10001','11111','10000','01111','00000'],b:['10000','10000','10110','11001','10001','11001','10110'],
+  L:['10000','10000','10000','10000','10000','10000','11111'],E:['11111','10000','10000','11110','10000','10000','11111'],D:['11110','10001','10001','10001','10001','10001','11110']
+ },leds=[],cols=word.length*5+(word.length-1);
+ [...word].forEach((letter,li)=>glyphs[letter].forEach((row,y)=>[...row].forEach((on,x)=>{if(on==='1')leds.push({x:li*6+x,y})})));
+ function colorAt(value){const stops=pageTheme.logoStops,p=((value%1)+1)%1;let a=stops[0],b=stops[stops.length-1];for(let i=1;i<stops.length;i++)if(p<=stops[i][0]){a=stops[i-1];b=stops[i];break}const t=(p-a[0])/(b[0]-a[0]||1);return a[1].map((v,i)=>Math.round(v+(b[1][i]-v)*t))}
+ function size(){const rect=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=diffuser.width=w;canvas.height=diffuser.height=h}}
+ const speedOrder=[1,0,3,2],modes=['Flow','Pulse','Sparkle','Wave'],speedButton=document.getElementById('logoSpeed'),logoToast=document.getElementById('logoToast');
+ let speedIndex=0,modeIndex=0,last=0,lastMotionTime=null,motionMs=0,drift=0,toastTimer=null,longTimer=null,suppressClick=false;
+ function showLogoToast(text){logoToast.textContent=text;logoToast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>logoToast.classList.remove('show'),950)}
+ function updateLogoLabel(){speedButton.setAttribute('aria-label',`Logo animation: ${modes[modeIndex]}, speed ${speedOrder[speedIndex]}. Tap for speed; hold for animation.`)}
+ function nextLogoAnimation(){modeIndex=(modeIndex+1)%modes.length;showLogoToast(modes[modeIndex].toUpperCase());updateLogoLabel()}
+ speedButton.onclick=e=>{if(suppressClick){suppressClick=false;e.preventDefault();return}speedIndex=(speedIndex+1)%speedOrder.length;const speed=speedOrder[speedIndex];showLogoToast(speed===0?'PAUSE':`${speed}X`);updateLogoLabel()};
+ speedButton.onpointerdown=e=>{if(e.pointerType==='mouse'&&e.button!==0)return;suppressClick=false;clearTimeout(longTimer);longTimer=setTimeout(()=>{longTimer=null;suppressClick=true;nextLogoAnimation()},550)};
+ const cancelLongPress=()=>{clearTimeout(longTimer);longTimer=null};
+ speedButton.onpointerup=cancelLongPress;speedButton.onpointercancel=cancelLongPress;speedButton.onpointerleave=cancelLongPress;
+ speedButton.oncontextmenu=e=>{if(suppressClick||longTimer)e.preventDefault()};
+ speedButton.onkeydown=e=>{if(e.shiftKey&&(e.key==='Enter'||e.key===' ')){e.preventDefault();nextLogoAnimation()}};
+ function flowingColor(position){const stops=pageTheme.logoStops,p=((position*.72+drift)%1+1)%1;return p<.72?colorAt(p/.72):stops[0][1].map((v,i)=>Math.round(stops[3][1][i]+(v-stops[3][1][i])*(p-.72)/.28))}
+ function logoColor(led){const position=led.x/(cols-1),phase=motionMs;
+  let light=1;
+  if(modeIndex===1)light=.52+.48*(1+Math.sin(phase*.003))/2;
+  if(modeIndex===2){const twinkle=Math.max(0,Math.sin(phase*.003+led.x*1.71+led.y*2.39));light=.54+.46*twinkle**10}
+  if(modeIndex===3)light=.52+.48*(1+Math.sin(phase*.0035-led.x*.26+led.y*.2))/2;
+  return flowingColor(position).map(value=>Math.round(value*light));
+ }
+ function draw(now){requestAnimationFrame(draw);if(now-last<45)return;last=now;size();
+  const w=canvas.width,h=canvas.height,dpr=Math.min(devicePixelRatio||1,2.5),padX=10*dpr,padY=8*dpr,pitch=Math.min((w-padX*2)/(cols-1),(h-padY*2)/6),radius=pitch*.35,startX=(w-(cols-1)*pitch)/2,startY=(h-6*pitch)/2,reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const elapsed=lastMotionTime===null?0:Math.min(100,Math.max(0,now-lastMotionTime));lastMotionTime=now;if(!reduced)motionMs+=elapsed*speedOrder[speedIndex];drift=motionMs*.000025;
+  ctx.clearRect(0,0,w,h);dctx.clearRect(0,0,w,h);
+  leds.forEach(led=>{const [r,g,b]=logoColor(led),x=startX+led.x*pitch,y=startY+led.y*pitch,haze=dctx.createRadialGradient(x,y,radius*.15,x,y,pitch*1.35);haze.addColorStop(0,`rgba(${r},${g},${b},${pageTheme.logoHazeCenter})`);haze.addColorStop(.4,`rgba(${r},${g},${b},${pageTheme.logoHazeMid})`);haze.addColorStop(1,`rgba(${r},${g},${b},0)`);dctx.fillStyle=haze;dctx.beginPath();dctx.arc(x,y,pitch*1.35,0,Math.PI*2);dctx.fill()});
+  ctx.save();ctx.globalAlpha=pageTheme.logoDiffuserAlpha;ctx.filter=`blur(${Math.max(3,radius*1.5)}px)`;ctx.drawImage(diffuser,0,0);ctx.restore();
+  leds.forEach(led=>{const [r,g,b]=logoColor(led),x=startX+led.x*pitch,y=startY+led.y*pitch;ctx.save();ctx.shadowColor=`rgba(${r},${g},${b},${pageTheme.logoShadowAlpha})`;ctx.shadowBlur=radius*1.25;ctx.fillStyle=pageTheme.logoShell;ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();ctx.restore();const fill=ctx.createRadialGradient(x-radius*.14,y-radius*.16,radius*.06,x,y,radius*.8);fill.addColorStop(0,`rgb(${Math.min(255,r+pageTheme.logoHighlight)},${Math.min(255,g+pageTheme.logoHighlight)},${Math.min(255,b+pageTheme.logoHighlight)})`);fill.addColorStop(1,`rgb(${Math.round(r*pageTheme.logoShade)},${Math.round(g*pageTheme.logoShade)},${Math.round(b*pageTheme.logoShade)})`);ctx.fillStyle=fill;ctx.beginPath();ctx.arc(x,y,radius*.8,0,Math.PI*2);ctx.fill();ctx.strokeStyle=pageTheme.logoOutline;ctx.lineWidth=Math.max(dpr,radius*.1);ctx.beginPath();ctx.arc(x,y,radius*.9,0,Math.PI*2);ctx.stroke()});
+  ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=pageTheme.logoScreenAlpha;ctx.filter=`blur(${Math.max(1.5,radius*.65)}px)`;ctx.drawImage(diffuser,0,0);ctx.restore()
+ }
+ requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
